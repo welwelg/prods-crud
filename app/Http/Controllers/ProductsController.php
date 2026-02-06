@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Products;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,9 @@ class ProductsController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Products/Index');
+        return Inertia::render('Products/Index', [
+            'products' => Products::latest()->paginate(10),
+        ]);
 
     }
 
@@ -29,7 +32,18 @@ class ProductsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        //  Validate
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0|max:499999.99',
+        ]);
+
+        // Save
+        Products::create($validated);
+
+        // Redirect back (Inertia handles the page refresh automatically)
+        return redirect()->back();
     }
 
     /**
@@ -53,14 +67,27 @@ class ProductsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        //  Validate the new data
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0|max:499999.99',
+        ]);
+
+        //  Update the product using the Mass Assignment protection we fixed earlier
+        Products::where('id', $id)->update($validated);
+
+        //  Redirect back (Inertia will automatically update the table without a full reload)
+        return redirect()->back();
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        Products::findOrFail($id)->delete();
+
+        return redirect()->back();
     }
 }
